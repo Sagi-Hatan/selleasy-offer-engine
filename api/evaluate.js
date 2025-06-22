@@ -1,3 +1,5 @@
+import { getCoordinates } from '../utils/dataEnrichment';
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
@@ -18,11 +20,14 @@ export default async function handler(req, res) {
     floor_number
   } = req.query;
 
+  const geo = await getCoordinates(address); // ✅ שלב 1: קריאה ל-OpenStreetMap
+
   const pricePerSqm = {
     "תל אביב": 37000,
     "ירושלים": 26000,
     "כפר סבא": 32000,
-    "חיפה": 20000
+    "חיפה": 20000,
+    "הרצליה": 34000
   };
 
   const pricePerMeter = pricePerSqm[city] || 25000;
@@ -39,7 +44,7 @@ export default async function handler(req, res) {
   if (has_parking === "true") basePrice += 50000;
   if (has_elevator === "false" && parseInt(floor_number) > 2) basePrice -= 50000;
 
-  const isInRedevelopment = address.includes("הרב קוק");
+  const isInRedevelopment = address.includes("הרב קוק"); // סימולציה ידנית בינתיים
 
   const adjustedValue = basePrice - renovationCost;
   const recommendedOffer = Math.round(adjustedValue * 0.85);
@@ -52,6 +57,7 @@ export default async function handler(req, res) {
     comments: isInRedevelopment
       ? "הנכס נמצא בתכנית פינוי-בינוי פעילה (בדיקה מבוססת מיקום)."
       : "לא אותרה תכנית התחדשות ידועה על פי הנתונים.",
-    price_per_sqm_area_avg: pricePerMeter
+    price_per_sqm_area_avg: pricePerMeter,
+    location_data: geo // ✅ תוספת חדשה לתשובה
   });
 }
