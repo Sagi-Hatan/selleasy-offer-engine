@@ -1,0 +1,25 @@
+{
+  "name": "selleasy-offer-engine",
+  "version": "1.0.0",
+  "description": "API to evaluate real estate offers based on location, condition and property size",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --watch server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sagi-Hatan/selleasy-offer-engine.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Sagi-Hatan/selleasy-offer-engine/issues"
+  },
+  "homepage": "https://github.com/Sagi-Hatan/selleasy-offer-engine#readme",
+  "dependencies": {
+    "express": "^5.1.0",
+    "node-fetch": "^2.7.0",
+    "puppeteer": "^24.10.2"
+  }
+}

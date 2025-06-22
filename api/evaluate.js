@@ -1,4 +1,5 @@
-import { getCoordinates, getAveragePriceFromGov } from '../utils/dataEnrichment';
+// api/evaluate.js
+import { getCoordinates, getAveragePriceFromGov } from '../utils/dataEnrichment.js';
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -13,6 +14,7 @@ export default async function handler(req, res) {
   const {
     address,
     city,
+    neighborhood = "",
     size_sqm,
     condition,
     has_parking,
@@ -20,32 +22,35 @@ export default async function handler(req, res) {
     floor_number
   } = req.query;
 
-  const geo = await getCoordinates(address); // 🧭 שליפת קואורדינטות
-  const govPricePerSqm = await getAveragePriceFromGov(address); // 💸 מחיר ממוצע למ"ר לפי עסקאות דומות
+  const geo = await getCoordinates(address);
 
-  const pricePerSqm = {
-    "תל אביב": 37000,
-    "ירושלים": 26000,
-    "כפר סבא": 32000,
-    "חיפה": 20000,
-    "הרצליה": 34000
-  };
+  const { value: pricePerMeter, fallbackUsed } = await getAveragePriceFromGov(
+    address,
+    city,
+    neighborhood
+  );
 
-  const pricePerMeter = govPricePerSqm || pricePerSqm[city] || 25000;
   let basePrice = size_sqm * pricePerMeter;
 
   let renovationCost = 0;
   switch (condition) {
-    case "חדש": renovationCost = 0; break;
-    case "שמור": renovationCost = 100000; break;
-    case "לשיפוץ": renovationCost = 200000; break;
-    default: renovationCost = 150000;
+    case "חדש":
+      renovationCost = 0;
+      break;
+    case "שמור":
+      renovationCost = 100000;
+      break;
+    case "לשיפוץ":
+      renovationCost = 200000;
+      break;
+    default:
+      renovationCost = 150000;
   }
 
   if (has_parking === "true") basePrice += 50000;
   if (has_elevator === "false" && parseInt(floor_number) > 2) basePrice -= 50000;
 
-  const isInRedevelopment = address.includes("הרב קוק"); // ⚠️ בדיקה ידנית זמנית
+  const isInRedevelopment = address.includes("הרב קוק");
 
   const adjustedValue = basePrice - renovationCost;
   const recommendedOffer = Math.round(adjustedValue * 0.85);
@@ -59,7 +64,8 @@ export default async function handler(req, res) {
       ? "הנכס נמצא בתכנית פינוי-בינוי פעילה (בדיקה מבוססת מיקום)."
       : "לא אותרה תכנית התחדשות ידועה על פי הנתונים.",
     price_per_sqm_area_avg: pricePerMeter,
-    price_per_sqm_gov_avg: govPricePerSqm,
+    price_per_sqm_gov_avg: fallbackUsed ? null : pricePerMeter,
+    price_source: fallbackUsed ? "fallback" : "govmap",
     location_data: geo
   });
 }
