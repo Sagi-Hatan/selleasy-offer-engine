@@ -1,4 +1,4 @@
-import { getCoordinates } from '../utils/dataEnrichment';
+import { getCoordinates, getAveragePriceFromGov } from '../utils/dataEnrichment';
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -20,7 +20,8 @@ export default async function handler(req, res) {
     floor_number
   } = req.query;
 
-  const geo = await getCoordinates(address); // ✅ שלב 1: קריאה ל-OpenStreetMap
+  const geo = await getCoordinates(address); // 🧭 שליפת קואורדינטות
+  const govPricePerSqm = await getAveragePriceFromGov(address); // 💸 מחיר ממוצע למ"ר לפי עסקאות דומות
 
   const pricePerSqm = {
     "תל אביב": 37000,
@@ -30,7 +31,7 @@ export default async function handler(req, res) {
     "הרצליה": 34000
   };
 
-  const pricePerMeter = pricePerSqm[city] || 25000;
+  const pricePerMeter = govPricePerSqm || pricePerSqm[city] || 25000;
   let basePrice = size_sqm * pricePerMeter;
 
   let renovationCost = 0;
@@ -44,7 +45,7 @@ export default async function handler(req, res) {
   if (has_parking === "true") basePrice += 50000;
   if (has_elevator === "false" && parseInt(floor_number) > 2) basePrice -= 50000;
 
-  const isInRedevelopment = address.includes("הרב קוק"); // סימולציה ידנית בינתיים
+  const isInRedevelopment = address.includes("הרב קוק"); // ⚠️ בדיקה ידנית זמנית
 
   const adjustedValue = basePrice - renovationCost;
   const recommendedOffer = Math.round(adjustedValue * 0.85);
@@ -58,6 +59,7 @@ export default async function handler(req, res) {
       ? "הנכס נמצא בתכנית פינוי-בינוי פעילה (בדיקה מבוססת מיקום)."
       : "לא אותרה תכנית התחדשות ידועה על פי הנתונים.",
     price_per_sqm_area_avg: pricePerMeter,
-    location_data: geo // ✅ תוספת חדשה לתשובה
+    price_per_sqm_gov_avg: govPricePerSqm,
+    location_data: geo
   });
 }
