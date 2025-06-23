@@ -1,6 +1,6 @@
 // server.js
 import express from 'express';
-import evaluateHandler from './api/evaluate.js';
+import evaluateHandler from './evaluate.js';
 
 const app = express();
 const port = 3000;
