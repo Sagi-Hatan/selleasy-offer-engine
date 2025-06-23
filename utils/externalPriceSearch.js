@@ -27,4 +27,3 @@ export function getFallbackPricePerSqm(city, neighborhood = "") {
   
     return cityData[neighborhood] || cityData["default"] || 25000;
   }
-  
